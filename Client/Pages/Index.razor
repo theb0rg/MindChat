@@ -1,0 +1,96 @@
+﻿@page "/"
+@inject IJSRuntime JSRuntime;
+@inject HttpClient Http;
+
+<PageTitle>MindChat</PageTitle>
+
+<h1>MindChat</h1>
+
+<video id="videoFeed" style="background-color: #666;" hidden="hidden" />
+@foreach (var chunk in Data.Values.Chunk(3))
+{
+    <div class="row">
+        @foreach (var item in chunk)
+        {
+            <div class="column">
+                <div class="card"><canvas id="canvas-@item.Id" width="640" height="480" style="object-fit: fill;background-color: #666;" /></div>
+            </div>
+        }
+    </div>
+}
+
+
+@code {
+    private HubConnection _hubConnection;
+    private System.Threading.Timer timer;
+    private static ImageData UserData = new ImageData();
+    private static bool CameraIsActive;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await JSRuntime.InvokeVoidAsync("startVideo", "videoFeed", DotNetObjectReference.Create(this));
+        await StartHubConnection();
+        AddImageDataListener();
+
+        timer = new System.Threading.Timer(async (object stateInfo) =>
+        {
+            if (CameraIsActive)
+            {
+                await CaptureFrame();
+            }
+        }, new System.Threading.AutoResetEvent(false), 500, 70);
+    }
+
+    private async Task StartHubConnection()
+    {
+        _hubConnection = new HubConnectionBuilder()
+            .WithUrl(Http.BaseAddress.ToString()+"chat")
+            .WithAutomaticReconnect()
+            .AddMessagePackProtocol()
+            .Build();
+        await _hubConnection.StartAsync();
+        if (_hubConnection.State == HubConnectionState.Connected)
+            Console.WriteLine("connection started");
+    }
+
+    public Dictionary<string, ImageData> Data = new Dictionary<string, ImageData>();
+
+    public async Task SendImageData(ImageData data) =>
+        await _hubConnection.SendAsync("SendImageData", data);
+
+    private void AddImageDataListener() => _hubConnection.On<ImageData>("ImageData", async (data) =>
+                                         {
+                                             if (data.Image == default)
+                                             {
+                                                 Data.Remove(data.Id);
+                                                 StateHasChanged();
+                                             }
+                                             else
+                                             {
+                                                 Data[data.Id] = data;
+                                                 Console.WriteLine(data.Image);
+                                                 StateHasChanged();
+                                                 await JSRuntime.InvokeVoidAsync("drawUser", "canvas-"+data.Id, data.Image);
+                                             }
+                                         });
+
+    private async Task CaptureFrame()
+    {
+        await JSRuntime.InvokeAsync<String>("getFrame", "videoFeed", DotNetObjectReference.Create(this));
+    }
+
+    [JSInvokable]
+    public void AllowSendFrames()
+    {
+        CameraIsActive = true;
+    }
+
+
+    [JSInvokable]
+    public async Task ProcessImage(string imageString)
+    {
+        UserData.Image = imageString;
+        await SendImageData(UserData);
+    }
+}

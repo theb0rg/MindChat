@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Data\deploy.prototxt" />
+    <None Remove="Data\res10_300x300_ssd_iter_140000_fp16.caffemodel" />
+    <None Remove="Data\roligatankar - Copy.txt" />
+    <None Remove="Data\roligatankar.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\deploy.prototxt" />
+    <EmbeddedResource Include="Data\res10_300x300_ssd_iter_140000_fp16.caffemodel" />
+    <EmbeddedResource Include="Data\roligatankar - Copy.txt" />
+    <EmbeddedResource Include="Data\roligatankar.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="6.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Protocols.MessagePack" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="6.0.1" />
+    <PackageReference Include="OpenCvSharp4" Version="4.5.5.20211231" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.5.5.20211231" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Client\MindChat.Client.csproj" />
+    <ProjectReference Include="..\Shared\MindChat.Shared.csproj" />
+  </ItemGroup>
+
+
+</Project>
